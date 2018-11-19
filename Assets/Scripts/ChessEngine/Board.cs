@@ -18,6 +18,9 @@ namespace ChessEngine
         public CellContent[,] CellsContent { get { return _cellsContent; } }   
         private CellContent[,] _cellsContent = new CellContent[8, 8];
 
+        public delegate void MoveEvent(Move m);
+        public event MoveEvent OnMove;
+
         private delegate IEnumerable<Coordinates> moveRule(Coordinates coord);
         private Dictionary<CellContent, moveRule> moveRules;
 
@@ -37,6 +40,14 @@ namespace ChessEngine
             moveRules[CellContent.BQueen] = (c) => QueenRule(c, CellContent.White);
             moveRules[CellContent.WKnight] = (c) => KnightRule(c, CellContent.Black);
             moveRules[CellContent.BKnight] = (c) => KnightRule(c, CellContent.White);
+        }
+
+        public void Move(Move m)
+        {
+            this.CellsContent[m.To.c, m.To.l] = this.CellsContent[m.From.c, m.From.l];
+            this.CellsContent[m.From.c, m.From.l] = CellContent.Empty;
+            if (OnMove != null)
+                OnMove.Invoke(m);
         }
 
         void Init()

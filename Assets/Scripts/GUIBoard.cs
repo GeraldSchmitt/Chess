@@ -35,6 +35,7 @@ public class GUIBoard : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
         _board = new Board();
+        _board.OnMove += OnMove;
 
         // Draw the board
         for (int l = 0; l < 8; l++)
@@ -145,12 +146,16 @@ public class GUIBoard : MonoBehaviour {
             var newCoord = new Coordinates { c = c, l = l };
             if (_possibleMoves.Contains(newCoord))
             {
-                Move(_selectedCoordinates, newCoord);
-                //Move m = new Move(_selectedCoordinates, newCoord);
-                //_board.Move(m);
+                Move m = new Move(_selectedCoordinates, newCoord);
+                _board.Move(m);
             }
 
         }
+    }
+
+    private void OnMove(Move m)
+    {
+        Move(m.From, m.To);
     }
 
     private void Move(Coordinates from, Coordinates to)
@@ -170,8 +175,6 @@ public class GUIBoard : MonoBehaviour {
             toCell.BoardCell.transform.position
             + new Vector3(0,0, PieceZDepth);
         fromCell.PieceSprite = null;
-        _board.CellsContent[to.c, to.l] = _board.CellsContent[from.c, from.l];
-        _board.CellsContent[from.c, from.l] = CellContent.Empty;
 
         // Because struct is passed by value
         BoardCells[from.c, from.l] = fromCell;
