@@ -389,6 +389,8 @@ MonoBehaviour:
     type: 2}
   SelectedCellPrefab: {fileID: 1766010710674714, guid: 1b3e2be70b17d5142b3ced0125378dfd,
     type: 2}
+  OkMovePrefab: {fileID: 1317026821135282, guid: 2e584bb111a6213418002601a8eef637,
+    type: 2}
   Sprites: {fileID: 2800000, guid: 58ee55b890c7c90489701f0570dbf850, type: 3}
   CellSize: 2.56
 --- !u!114 &1470869444

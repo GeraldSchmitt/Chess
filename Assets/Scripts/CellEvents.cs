@@ -8,7 +8,7 @@ public class CellEvents : MonoBehaviour {
 
     public int Column;
 
-    public Board Board { get; set; }
+    public GUIBoard Board { get; set; }
 
 	// Use this for initialization
 	void Start () {
