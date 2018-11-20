@@ -6,13 +6,6 @@ using UnityEngine;
 
 namespace ChessEngine
 {
-    public enum PieceColor
-    {
-        None,
-        White,
-        Black,
-    }
-
     class Board
     {
         public CellContent[,] CellsContent { get { return _cellsContent; } }   
@@ -23,6 +16,8 @@ namespace ChessEngine
 
         private delegate IEnumerable<Coordinates> moveRule(Coordinates coord);
         private Dictionary<CellContent, moveRule> moveRules;
+
+        private CellContent activePlayer = CellContent.White;
 
         public Board()
         {
@@ -44,10 +39,25 @@ namespace ChessEngine
 
         public void Move(Move m)
         {
+            // Test if move is legal ?
+            if (!GetCellContent(m.From).HasFlag(activePlayer))
+            {
+                return;
+            }
+
             this.CellsContent[m.To.c, m.To.l] = this.CellsContent[m.From.c, m.From.l];
             this.CellsContent[m.From.c, m.From.l] = CellContent.Empty;
             if (OnMove != null)
                 OnMove.Invoke(m);
+
+            if ((activePlayer & CellContent.White) == CellContent.White)
+            {
+                activePlayer = CellContent.Black;
+            }
+            else
+            {
+                activePlayer = CellContent.White;
+            }
         }
 
         void Init()
@@ -103,7 +113,7 @@ namespace ChessEngine
                     var move = coord.Move(g, p);
                     var cell = GetCellContent(move);
                     if (cell == CellContent.Empty ||
-                        ((cell & opponentColor) == opponentColor))
+                        cell.HasFlag(opponentColor))
                     {
                         res.Add(move);
                     }
@@ -111,7 +121,7 @@ namespace ChessEngine
                     move = coord.Move(p, g);
                     cell = GetCellContent(move);
                     if (cell == CellContent.Empty ||
-                        ((cell & opponentColor) == opponentColor))
+                        cell.HasFlag(opponentColor))
                     {
                         res.Add(move);
                     }
@@ -141,7 +151,7 @@ namespace ChessEngine
                         {
                             move = move.Move(dc, dl);
                             var cell = GetCellContent(move);
-                            if ((cell & opponentColor) == opponentColor)
+                            if (cell.HasFlag(opponentColor))
                             {
                                 res.Add(move);
                                 continueMove = false;
@@ -178,7 +188,7 @@ namespace ChessEngine
                     {
                         move = move.Move(dc, dl);
                         var cell = GetCellContent(move);
-                        if ((cell & opponentColor) == opponentColor)
+                        if (cell.HasFlag(opponentColor))
                         {
                             res.Add(move);
                             continueMove = false;
@@ -210,30 +220,7 @@ namespace ChessEngine
 
                     var move = coord.Move(dc, dl);
                     var cell = GetCellContent(move);
-                    if ((cell & opponentColor) == opponentColor ||
-                        cell == CellContent.Empty)
-                    {
-                        res.Add(move);
-                    }
-                }
-            }
-
-            return res;
-        }
-
-        private IEnumerable<Coordinates> WKingRule(Coordinates coord)
-        {
-            var res = new List<Coordinates>();
-            var opponentColor = CellContent.Black;
-            for (int dc = -1; dc <= 1; dc++)
-            {
-                for (int dl = -1; dl <= 1; dl++)
-                {
-                    if (dc == 0 && dl == 0) continue;
-
-                    var move = coord.Move(dc, dl);
-                    var cell = GetCellContent(move);
-                    if ((cell & opponentColor) == opponentColor ||
+                    if (cell.HasFlag(opponentColor) ||
                         cell == CellContent.Empty)
                     {
                         res.Add(move);
@@ -268,13 +255,13 @@ namespace ChessEngine
 
             // Can eat ?
             move = coord.Move(1, direction);
-            if ((GetCellContent(move) & opponentColor) == opponentColor)
+            if (GetCellContent(move).HasFlag(opponentColor))
             {
                 res.Add(move);
             }
 
             move = coord.Move(-1, direction);
-            if ((GetCellContent(move) & opponentColor) == opponentColor)
+            if (GetCellContent(move).HasFlag(opponentColor))
             {
                 res.Add(move);
             }

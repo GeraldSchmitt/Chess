@@ -36,4 +36,12 @@ namespace ChessEngine
 
         Outside = 0x100,
     }
+
+    public static class Utils
+    {
+        public static bool HasFlag(this CellContent value, CellContent flag)
+        {
+            return (value & flag) == flag; 
+        }
+    }
 }
