@@ -17,7 +17,6 @@ public class CellEvents : MonoBehaviour {
 
     public void Select()
     {
-        Debug.Log(string.Format("[CellEvents] Select {0} {1}", Line, Column));
         Board.OnCellClick(Column, Line);
     }
 	

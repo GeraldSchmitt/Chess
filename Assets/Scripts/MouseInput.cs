@@ -17,12 +17,12 @@ public class MouseInput : MonoBehaviour {
             var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             if (Physics.Raycast(ray, out hitInfo))
             {
-                Debug.Log("Something hit");
+                //Debug.Log("Something hit");
                 hitInfo.collider.gameObject.SendMessage("Select");
             }
             else
             {
-                Debug.Log("Nothing hit");
+                //Debug.Log("Nothing hit");
             }
         }
     }

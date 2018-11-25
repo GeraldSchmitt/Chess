@@ -37,11 +37,20 @@ namespace ChessEngine
         Outside = 0x100,
     }
 
-    public static class Utils
+    public static class CellContentExtensions
     {
         public static bool HasFlag(this CellContent value, CellContent flag)
         {
             return (value & flag) == flag; 
+        }
+
+        public static CellContent OpponentColor(this CellContent value)
+        {
+            if (value.HasFlag(CellContent.White)) return CellContent.Black;
+
+            if (value.HasFlag(CellContent.Black)) return CellContent.White;
+
+            return CellContent.Empty;
         }
     }
 }

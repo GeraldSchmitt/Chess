@@ -17,50 +17,40 @@ namespace ChessEngine
         private delegate IEnumerable<Coordinates> moveRule(Coordinates coord);
         private Dictionary<CellContent, moveRule> moveRules;
 
+        public CellContent ActivePlayer { get { return activePlayer; } }
         private CellContent activePlayer = CellContent.White;
+
+        public bool WhiteCheck { get; private set; }
+        public bool BlackCheck { get; private set; }
 
         public Board()
         {
-            Init();
-            moveRules = new Dictionary<CellContent, moveRule>();
-            moveRules[CellContent.WPawn] = WPawnRule;
-            moveRules[CellContent.BPawn] = BPawnRule;
-            moveRules[CellContent.WKing] = (c) => KingRule(c, CellContent.Black);
-            moveRules[CellContent.BKing] = (c) => KingRule(c, CellContent.White);
-            moveRules[CellContent.WBishop] = (c) => BishopRule(c, CellContent.Black);
-            moveRules[CellContent.BBishop] = (c) => BishopRule(c, CellContent.White);
-            moveRules[CellContent.WRook] = (c) => RookRule(c, CellContent.Black);
-            moveRules[CellContent.BRook] = (c) => RookRule(c, CellContent.White);
-            moveRules[CellContent.WQueen] = (c) => QueenRule(c, CellContent.Black);
-            moveRules[CellContent.BQueen] = (c) => QueenRule(c, CellContent.White);
-            moveRules[CellContent.WKnight] = (c) => KnightRule(c, CellContent.Black);
-            moveRules[CellContent.BKnight] = (c) => KnightRule(c, CellContent.White);
+            InitPieces();
+            InitMovementRules();
+        }
+
+        public Board(Board b)
+        {
+            _cellsContent = (CellContent[,])b.CellsContent.Clone();
+            InitMovementRules();
+            activePlayer = b.activePlayer;
         }
 
         public void Move(Move m)
         {
-            // Test if move is legal ?
-            if (!GetCellContent(m.From).HasFlag(activePlayer))
-            {
-                return;
-            }
+            CellsContent[m.To.c, m.To.l] = CellsContent[m.From.c, m.From.l];
+            CellsContent[m.From.c, m.From.l] = CellContent.Empty;
 
-            this.CellsContent[m.To.c, m.To.l] = this.CellsContent[m.From.c, m.From.l];
-            this.CellsContent[m.From.c, m.From.l] = CellContent.Empty;
+            activePlayer = activePlayer.OpponentColor();
+
+            WhiteCheck = IsCheck(CellContent.White);
+            BlackCheck = IsCheck(CellContent.Black);
+
             if (OnMove != null)
                 OnMove.Invoke(m);
-
-            if ((activePlayer & CellContent.White) == CellContent.White)
-            {
-                activePlayer = CellContent.Black;
-            }
-            else
-            {
-                activePlayer = CellContent.White;
-            }
         }
 
-        void Init()
+        private void InitPieces()
         {
             for (int c = 0; c < 8; c++)
                 for (int l = 0; l < 8; l++)
@@ -91,6 +81,23 @@ namespace ChessEngine
             _cellsContent[7, 7] = CellContent.BRook;
         }
 
+        private void InitMovementRules()
+        {
+            moveRules = new Dictionary<CellContent, moveRule>();
+            moveRules[CellContent.WPawn] = WPawnRule;
+            moveRules[CellContent.BPawn] = BPawnRule;
+            moveRules[CellContent.WKing] = (c) => KingRule(c, CellContent.Black);
+            moveRules[CellContent.BKing] = (c) => KingRule(c, CellContent.White);
+            moveRules[CellContent.WBishop] = (c) => BishopRule(c, CellContent.Black);
+            moveRules[CellContent.BBishop] = (c) => BishopRule(c, CellContent.White);
+            moveRules[CellContent.WRook] = (c) => RookRule(c, CellContent.Black);
+            moveRules[CellContent.BRook] = (c) => RookRule(c, CellContent.White);
+            moveRules[CellContent.WQueen] = (c) => QueenRule(c, CellContent.Black);
+            moveRules[CellContent.BQueen] = (c) => QueenRule(c, CellContent.White);
+            moveRules[CellContent.WKnight] = (c) => KnightRule(c, CellContent.Black);
+            moveRules[CellContent.BKnight] = (c) => KnightRule(c, CellContent.White);
+        }
+
         public IEnumerable<Coordinates> PossibleMoves(Coordinates coord)
         {
             var res = new List<Coordinates>();
@@ -101,6 +108,76 @@ namespace ChessEngine
             }
 
             return res;
+        }
+
+        public IEnumerable<Coordinates> LegalMoves(Coordinates from)
+        {
+            if (!GetCellContent(from).HasFlag(activePlayer))
+            {
+                yield break;
+            }
+
+            // A legal move is a move that do not put or let the king in check
+            var possiblesMoves = PossibleMoves(from);
+            foreach(var to in possiblesMoves)
+            {
+                var move = new Move(from, to); 
+                var newBoard = PlayMove(move);
+                if (!newBoard.IsCheck(activePlayer))
+                {
+                    yield return to;
+                }
+            }
+        }
+
+        public Board PlayMove(Move m)
+        {
+            var newBoard = new Board(this);
+            newBoard.Move(m);
+            return newBoard;
+        }
+
+        public bool IsCheck(CellContent playerColor)
+        {
+            //calculer toutes les cases atteintes par les pièces adverses
+            Coordinates kingPos;
+            if (!KingPosition(playerColor, out kingPos))
+                return false;
+
+            var opponentColor = playerColor.OpponentColor();
+
+            for (int l = 0; l < 8; l++)
+            {
+                for (int c = 0; c < 8; c++)
+                {
+                    if (_cellsContent[c, l].HasFlag(opponentColor))
+                    {
+                        var moves = PossibleMoves(new Coordinates(c, l));
+                        if (moves.Contains(kingPos))
+                            return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private bool KingPosition(CellContent playerColor, out Coordinates kingPos)
+        {
+            CellContent king = playerColor | CellContent.King;
+            for (int l = 0; l < 8; l++)
+            {
+                for (int c = 0; c < 8; c++)
+                {
+                    if (_cellsContent[c,l] == king)
+                    {
+                        kingPos = new Coordinates(c, l);
+                        return true;
+                    }
+                }
+            }
+            kingPos = new Coordinates();
+            return false;
         }
 
         private IEnumerable<Coordinates> KnightRule(Coordinates coord, CellContent opponentColor)
@@ -284,6 +361,37 @@ namespace ChessEngine
             if (c.c < 0 || c.l < 0 || c.c > 7 || c.l > 7)
                 return CellContent.Outside;
             return _cellsContent[c.c, c.l];
+        }
+
+        public override string ToString()
+        {
+            Dictionary<CellContent, char> letters = new Dictionary<CellContent, char>();
+            letters[CellContent.Empty] = '_';
+            letters[CellContent.WPawn] = 'p';
+            letters[CellContent.BPawn] = 'P';
+            letters[CellContent.WRook] = 'r';
+            letters[CellContent.BRook] = 'R';
+            letters[CellContent.WKnight] = 'c';
+            letters[CellContent.BKnight] = 'C';
+            letters[CellContent.WBishop] = 'b';
+            letters[CellContent.BBishop] = 'B';
+            letters[CellContent.WQueen] = 'q';
+            letters[CellContent.BQueen] = 'Q';
+            letters[CellContent.WKing] = 'k';
+            letters[CellContent.BKing] = 'K';
+
+            string res = string.Empty;
+
+            for (int l = 7; l >= 0; l--)
+            {
+                for (int c = 0; c < 8; c++)
+                {
+                    res += letters[_cellsContent[c, l]];
+                }
+                res += '\n';
+            }
+
+            return res;
         }
     }
 }

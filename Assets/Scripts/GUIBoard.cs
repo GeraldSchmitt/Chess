@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.UI;
 using ChessEngine;
 
 public class GUIBoard : MonoBehaviour {
@@ -13,6 +14,7 @@ public class GUIBoard : MonoBehaviour {
     public GameObject SelectedCellPrefab;
     public GameObject OkMovePrefab;
     public Texture2D Sprites;
+    public Text PlayersTurn;
 
     public float CellSize = 2.56f;
     
@@ -31,6 +33,9 @@ public class GUIBoard : MonoBehaviour {
     private const float PieceZDepth = -0.01f;
     private const float SelectionZDepth = -0.001f;
     private const float TopZDepth = -0.02f;
+
+    private bool whiteCheck = false;
+    private bool blackCheck = false;
 
 	// Use this for initialization
 	void Start () {
@@ -99,8 +104,25 @@ public class GUIBoard : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-		
-	}
+		if (_board.ActivePlayer == CellContent.White)
+        {
+            PlayersTurn.text = "A blanc de jouer";
+        }
+        else
+        {
+            PlayersTurn.text = "A noir de jouer";
+        }
+
+        if (_board.WhiteCheck)
+        {
+            PlayersTurn.text += "\nBlanc en échec.";
+        }
+
+        if (_board.BlackCheck)
+        {
+            PlayersTurn.text += "\nNoir en échec.";
+        }
+    }
 
     private GameObject _selectedCell;
     private bool _isSelection = false;
@@ -127,7 +149,8 @@ public class GUIBoard : MonoBehaviour {
                 _isSelection = true;
 
             // Get possible moves
-            _possibleMoves = _board.PossibleMoves(_selectedCoordinates);
+            //_possibleMoves = _board.PossibleMoves(_selectedCoordinates);
+            _possibleMoves = _board.LegalMoves(_selectedCoordinates).ToList();
             ShowPossibleMoves(_possibleMoves);
             Debug.Log(string.Format("{0} possible moves :", _possibleMoves.Count()));
             Debug.Log(string.Join(", ", _possibleMoves.Select(x => x.ToString()).ToArray()));
@@ -147,7 +170,12 @@ public class GUIBoard : MonoBehaviour {
             if (_possibleMoves.Contains(newCoord))
             {
                 Move m = new Move(_selectedCoordinates, newCoord);
+                //Debug.Log("before move\n" + _board);
                 _board.Move(m);
+                //Debug.Log("after move\n" + _board);
+                //blackCheck = _board.IsCheck(CellContent.Black);
+                //Debug.LogFormat("Black check = {0}", blackCheck);
+
             }
 
         }
@@ -156,6 +184,12 @@ public class GUIBoard : MonoBehaviour {
     private void OnMove(Move m)
     {
         Move(m.From, m.To);
+
+        whiteCheck = _board.IsCheck(CellContent.White);
+        Debug.LogFormat("White check = {0}", whiteCheck);
+        blackCheck = _board.IsCheck(CellContent.Black);
+        Debug.LogFormat("Black check = {0}", blackCheck);
+        Debug.Log(_board);
     }
 
     private void Move(Coordinates from, Coordinates to)
