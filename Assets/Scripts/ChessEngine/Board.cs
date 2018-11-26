@@ -14,7 +14,7 @@ namespace ChessEngine
         public delegate void MoveEvent(Move m);
         public event MoveEvent OnMove;
 
-        private delegate IEnumerable<Coordinates> moveRule(Coordinates coord);
+        private delegate IEnumerable<Coordinates> moveRule(Coordinates coord, bool doNotCastle);
         private Dictionary<CellContent, moveRule> moveRules;
 
         public CellContent ActivePlayer { get { return activePlayer; } }
@@ -22,6 +22,9 @@ namespace ChessEngine
 
         public bool WhiteCheck { get; private set; }
         public bool BlackCheck { get; private set; }
+
+        private bool canWhiteCastle = true;
+        private bool canBlackCastle = true;
 
         public Board()
         {
@@ -43,8 +46,8 @@ namespace ChessEngine
 
             activePlayer = activePlayer.OpponentColor();
 
-            WhiteCheck = IsCheck(CellContent.White);
-            BlackCheck = IsCheck(CellContent.Black);
+            WhiteCheck = IsCheck(CellContent.White, true);
+            BlackCheck = IsCheck(CellContent.Black, true);
 
             if (OnMove != null)
                 OnMove.Invoke(m);
@@ -84,33 +87,33 @@ namespace ChessEngine
         private void InitMovementRules()
         {
             moveRules = new Dictionary<CellContent, moveRule>();
-            moveRules[CellContent.WPawn] = WPawnRule;
-            moveRules[CellContent.BPawn] = BPawnRule;
-            moveRules[CellContent.WKing] = (c) => KingRule(c, CellContent.Black);
-            moveRules[CellContent.BKing] = (c) => KingRule(c, CellContent.White);
-            moveRules[CellContent.WBishop] = (c) => BishopRule(c, CellContent.Black);
-            moveRules[CellContent.BBishop] = (c) => BishopRule(c, CellContent.White);
-            moveRules[CellContent.WRook] = (c) => RookRule(c, CellContent.Black);
-            moveRules[CellContent.BRook] = (c) => RookRule(c, CellContent.White);
-            moveRules[CellContent.WQueen] = (c) => QueenRule(c, CellContent.Black);
-            moveRules[CellContent.BQueen] = (c) => QueenRule(c, CellContent.White);
-            moveRules[CellContent.WKnight] = (c) => KnightRule(c, CellContent.Black);
-            moveRules[CellContent.BKnight] = (c) => KnightRule(c, CellContent.White);
+            moveRules[CellContent.WPawn] = (c, x) => PawnRule(c, CellContent.White);
+            moveRules[CellContent.BPawn] = (c, x) => PawnRule(c, CellContent.Black);
+            moveRules[CellContent.WKing] = (c, x) => KingRule(c, CellContent.Black, x);
+            moveRules[CellContent.BKing] = (c, x) => KingRule(c, CellContent.White);
+            moveRules[CellContent.WBishop] = (c, x) => BishopRule(c, CellContent.Black);
+            moveRules[CellContent.BBishop] = (c, x) => BishopRule(c, CellContent.White);
+            moveRules[CellContent.WRook] = (c, x) => RookRule(c, CellContent.Black);
+            moveRules[CellContent.BRook] = (c, x) => RookRule(c, CellContent.White);
+            moveRules[CellContent.WQueen] = (c, x) => QueenRule(c, CellContent.Black);
+            moveRules[CellContent.BQueen] = (c, x) => QueenRule(c, CellContent.White);
+            moveRules[CellContent.WKnight] = (c, x) => KnightRule(c, CellContent.Black);
+            moveRules[CellContent.BKnight] = (c, x) => KnightRule(c, CellContent.White);
         }
 
-        public IEnumerable<Coordinates> PossibleMoves(Coordinates coord)
+        public IEnumerable<Coordinates> PossibleMoves(Coordinates coord, bool doNotCastle)
         {
             var res = new List<Coordinates>();
             var content = _cellsContent[coord.c, coord.l];
             if (moveRules.ContainsKey(content))
             {
-                return moveRules[content](coord);
+                return moveRules[content](coord, doNotCastle);
             }
 
             return res;
         }
 
-        public IEnumerable<Coordinates> LegalMoves(Coordinates from)
+        public IEnumerable<Move> LegalMoves(Coordinates from)
         {
             if (!GetCellContent(from).HasFlag(activePlayer))
             {
@@ -118,14 +121,14 @@ namespace ChessEngine
             }
 
             // A legal move is a move that do not put or let the king in check
-            var possiblesMoves = PossibleMoves(from);
+            var possiblesMoves = PossibleMoves(from, false);
             foreach(var to in possiblesMoves)
             {
                 var move = new Move(from, to); 
                 var newBoard = PlayMove(move);
-                if (!newBoard.IsCheck(activePlayer))
+                if (!newBoard.IsCheck(activePlayer, true))
                 {
-                    yield return to;
+                    yield return move;
                 }
             }
         }
@@ -137,14 +140,15 @@ namespace ChessEngine
             return newBoard;
         }
 
-        public bool IsCheck(CellContent playerColor)
+        public bool IsCheck(CellContent playerColor, bool doNotCastle)
         {
             //calculer toutes les cases atteintes par les pièces adverses
             Coordinates kingPos;
             if (!KingPosition(playerColor, out kingPos))
                 return false;
 
-            var opponentColor = playerColor.OpponentColor();
+            return IsCheck(playerColor, kingPos, doNotCastle);
+            /*var opponentColor = playerColor.OpponentColor();
 
             for (int l = 0; l < 8; l++)
             {
@@ -154,6 +158,26 @@ namespace ChessEngine
                     {
                         var moves = PossibleMoves(new Coordinates(c, l));
                         if (moves.Contains(kingPos))
+                            return true;
+                    }
+                }
+            }
+
+            return false;*/
+        }
+
+        private bool IsCheck(CellContent playerColor, Coordinates position, bool doNotCastle)
+        {
+            var opponentColor = playerColor.OpponentColor();
+
+            for (int l = 0; l < 8; l++)
+            {
+                for (int c = 0; c < 8; c++)
+                {
+                    if (_cellsContent[c, l].HasFlag(opponentColor))
+                    {
+                        var moves = PossibleMoves(new Coordinates(c, l), doNotCastle);
+                        if (moves.Contains(position))
                             return true;
                     }
                 }
@@ -286,8 +310,12 @@ namespace ChessEngine
             return res;
         }
 
-        private IEnumerable<Coordinates> KingRule(Coordinates coord, CellContent opponentColor)
+        private IEnumerable<Coordinates> KingRule(
+            Coordinates coord, 
+            CellContent opponentColor,
+            bool doNotCastle = false)
         {
+            var playerColor = opponentColor.OpponentColor();
             var res = new List<Coordinates>();
             for (int dc = -1; dc <= 1; dc++)
             {
@@ -305,6 +333,42 @@ namespace ChessEngine
                 }
             }
 
+            if (doNotCastle)
+                return res;
+
+            //Can castle ?
+            if(opponentColor == CellContent.White && canBlackCastle ||
+                opponentColor == CellContent.Black && canWhiteCastle)
+            {
+                if (IsCheck(playerColor, true))
+                    return res;
+
+                Coordinates kingPos;
+                if (!KingPosition(playerColor, out kingPos))
+                    return res;
+
+                //grand rock
+                var m1 = kingPos.Move(1, 0);
+                var m2 = kingPos.Move(2, 0);
+                if (!IsCheck(playerColor, m1, true) && GetCellContent(m1) == CellContent.Empty &&
+                    !IsCheck(playerColor, m2, true) && GetCellContent(m2) == CellContent.Empty)
+                {
+                    Debug.Log("Grand rock OK");
+                    res.Add(m2);
+                }
+
+                //petit rock
+                m1 = kingPos.Move(-1, 0);
+                m2 = kingPos.Move(-2, 0);
+                if (!IsCheck(playerColor, m1, true) && GetCellContent(m1) == CellContent.Empty &&
+                    !IsCheck(playerColor, m2, true) && GetCellContent(m2) == CellContent.Empty)
+                {
+                    res.Add(m2);
+                    Debug.Log("Petit rock OK");
+                }
+
+            }
+
             return res;
         }
 
@@ -313,7 +377,7 @@ namespace ChessEngine
             var res = new List<Coordinates>();
             var firstLine = color == CellContent.White ? 1 : 6;
             var direction = color == CellContent.White ? 1 : -1;
-            var opponentColor = color == CellContent.White ? CellContent.Black : CellContent.White;
+            var opponentColor = color.OpponentColor();
 
             // Can move ?
             Coordinates move = coord.Move(0, direction);

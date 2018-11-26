@@ -18,7 +18,7 @@ namespace ChessEngine
 
         public override string ToString()
         {
-            return string.Format("{0}{1}", (char)('A' + c), l + 1);
+            return string.Format("{0}{1}", (char)('a' + c), l + 1);
         }
 
         public Coordinates Move(int delta_c, int delta_l)

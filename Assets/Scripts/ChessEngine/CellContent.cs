@@ -35,6 +35,7 @@ namespace ChessEngine
         BKing = Black | King,
 
         Outside = 0x100,
+        EnPassant = 0x200,
     }
 
     public static class CellContentExtensions

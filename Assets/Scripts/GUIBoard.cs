@@ -127,7 +127,7 @@ public class GUIBoard : MonoBehaviour {
     private GameObject _selectedCell;
     private bool _isSelection = false;
     private Coordinates _selectedCoordinates;
-    private IEnumerable<Coordinates> _possibleMoves;
+    private IEnumerable<Move> _possibleMoves;
     public void OnCellClick(int c, int l)
     {
         if (!_isSelection)
@@ -149,7 +149,6 @@ public class GUIBoard : MonoBehaviour {
                 _isSelection = true;
 
             // Get possible moves
-            //_possibleMoves = _board.PossibleMoves(_selectedCoordinates);
             _possibleMoves = _board.LegalMoves(_selectedCoordinates).ToList();
             ShowPossibleMoves(_possibleMoves);
             Debug.Log(string.Format("{0} possible moves :", _possibleMoves.Count()));
@@ -167,15 +166,10 @@ public class GUIBoard : MonoBehaviour {
             _selectedCell.SetActive(false);
             _isSelection = false;
             var newCoord = new Coordinates { c = c, l = l };
-            if (_possibleMoves.Contains(newCoord))
+            if (_possibleMoves.Select(x => x.To).Contains(newCoord))
             {
                 Move m = new Move(_selectedCoordinates, newCoord);
-                //Debug.Log("before move\n" + _board);
                 _board.Move(m);
-                //Debug.Log("after move\n" + _board);
-                //blackCheck = _board.IsCheck(CellContent.Black);
-                //Debug.LogFormat("Black check = {0}", blackCheck);
-
             }
 
         }
@@ -184,12 +178,8 @@ public class GUIBoard : MonoBehaviour {
     private void OnMove(Move m)
     {
         Move(m.From, m.To);
-
-        whiteCheck = _board.IsCheck(CellContent.White);
-        Debug.LogFormat("White check = {0}", whiteCheck);
-        blackCheck = _board.IsCheck(CellContent.Black);
-        Debug.LogFormat("Black check = {0}", blackCheck);
-        Debug.Log(_board);
+        whiteCheck = _board.IsCheck(CellContent.White, true);
+        blackCheck = _board.IsCheck(CellContent.Black, true);
     }
 
     private void Move(Coordinates from, Coordinates to)
@@ -215,7 +205,7 @@ public class GUIBoard : MonoBehaviour {
         BoardCells[to.c, to.l] = toCell;
     }
 
-    private void ShowPossibleMoves(IEnumerable<Coordinates> okMoves)
+    private void ShowPossibleMoves(IEnumerable<Move> okMoves)
     {
         // Delete existing indication
         foreach(var go in OkMoves)
@@ -233,7 +223,7 @@ public class GUIBoard : MonoBehaviour {
         {
             var go = Instantiate(
                 OkMovePrefab,
-                GetPosition(move, TopZDepth),
+                GetPosition(move.To, TopZDepth),
                 Quaternion.identity);
             OkMoves.Add(go);
         }
