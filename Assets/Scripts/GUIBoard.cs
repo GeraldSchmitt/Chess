@@ -178,6 +178,23 @@ public class GUIBoard : MonoBehaviour {
     private void OnMove(Move m)
     {
         Move(m.From, m.To);
+        if (m.IsBBigCastle())
+        {
+            Move(new Coordinates("a8"), new Coordinates("d8"));
+        }
+        else if (m.IsBSmallCastle())
+        {
+            Move(new Coordinates("h8"), new Coordinates("f8"));
+        }
+        else if (m.IsWBigCastle())
+        {
+            Move(new Coordinates("a1"), new Coordinates("d1"));
+        }
+        else if (m.IsWSmallCastle())
+        {
+            Move(new Coordinates("h1"), new Coordinates("f1"));
+        }
+
         whiteCheck = _board.IsCheck(CellContent.White, true);
         blackCheck = _board.IsCheck(CellContent.Black, true);
     }

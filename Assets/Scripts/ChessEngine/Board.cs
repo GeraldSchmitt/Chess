@@ -74,13 +74,40 @@ namespace ChessEngine
             activePlayer = b.activePlayer;
         }
 
+        private void Move(Coordinates from, Coordinates to)
+        {
+            CellsContent[to.c, to.l] = CellsContent[from.c, from.l];
+            CellsContent[from.c, from.l] = CellContent.Empty;
+        }
+
         public void Move(Move m)
         {
+            // Normal move
             CellsContent[m.To.c, m.To.l] = CellsContent[m.From.c, m.From.l];
             CellsContent[m.From.c, m.From.l] = CellContent.Empty;
 
+            // Castling move
+            if (m.IsBBigCastle())
+            {
+                Move(BRookPosL, new Coordinates("d8"));
+            }
+            else if (m.IsBSmallCastle())
+            {
+                Move(BRookPosR, new Coordinates("f8"));
+            }
+            else if (m.IsWBigCastle())
+            {
+                Move(WRookPosL, new Coordinates("d1"));
+            }
+            else if (m.IsWSmallCastle())
+            {
+                Move(WRookPosR, new Coordinates("f1"));
+            }
+
+            // Next player
             activePlayer = activePlayer.OpponentColor();
 
+            // Update board state
             WhiteCheck = IsCheck(CellContent.White, true);
             BlackCheck = IsCheck(CellContent.Black, true);
 
