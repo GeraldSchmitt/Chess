@@ -8,17 +8,17 @@ namespace ChessEngine
     [Flags]
     public enum CellContent
     {
-        Empty = 0x00,
+        Empty = 0x01,
 
-        White = 0x01,
-        Black = 0x02,
+        White = 0x02,
+        Black = 0x04,
 
-        Pawn = 0x04,
-        Bishop = 0x08,
-        Knight = 0x10,
-        Rook = 0x20,
-        Queen = 0x40,
-        King = 0x80,
+        Pawn = 0x08,
+        Bishop = 0x10,
+        Knight = 0x20,
+        Rook = 0x40,
+        Queen = 0x80,
+        King = 0x100,
 
         WPawn = White | Pawn,
         WBishop = White | Bishop,
@@ -34,8 +34,8 @@ namespace ChessEngine
         BQueen = Black | Queen,
         BKing = Black | King,
 
-        Outside = 0x100,
-        EnPassant = 0x200,
+        Outside = 0x200,
+        EnPassant = 0x400,
     }
 
     public static class CellContentExtensions

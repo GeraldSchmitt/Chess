@@ -23,8 +23,43 @@ namespace ChessEngine
         public bool WhiteCheck { get; private set; }
         public bool BlackCheck { get; private set; }
 
-        private bool canWhiteCastle = true;
-        private bool canBlackCastle = true;
+        private bool canWhiteBigCastle = true;
+        private bool canWhiteSmallCastle = true;
+        private bool canBlackBigCastle = true;
+        private bool canBlackSmallCastle = true;
+
+        private static readonly Coordinates[] blackSmallCastleCoords =
+        {
+            new Coordinates("f8"),
+            new Coordinates("g8")
+        };
+
+        private static readonly Coordinates[] blackBigCastleCoords =
+        {
+            new Coordinates("d8"),
+            new Coordinates("c8"),
+            new Coordinates("b8")
+        };
+
+        private static readonly Coordinates[] whiteSmallCastleCoords =
+        {
+            new Coordinates("f1"),
+            new Coordinates("g1")
+        };
+
+        private static readonly Coordinates[] whiteBigCastleCoords =
+        {
+            new Coordinates("d1"),
+            new Coordinates("c1"),
+            new Coordinates("b1")
+        };
+
+        private static readonly Coordinates WKingPos = new Coordinates("e1");
+        private static readonly Coordinates BKingPos = new Coordinates("e8");
+        private static readonly Coordinates WRookPosL = new Coordinates("a1");
+        private static readonly Coordinates WRookPosR = new Coordinates("h1");
+        private static readonly Coordinates BRookPosL = new Coordinates("a8");
+        private static readonly Coordinates BRookPosR = new Coordinates("h8");
 
         public Board()
         {
@@ -48,6 +83,34 @@ namespace ChessEngine
 
             WhiteCheck = IsCheck(CellContent.White, true);
             BlackCheck = IsCheck(CellContent.Black, true);
+
+            // Remember if castling pieces moved
+            if (m.From == WKingPos)
+            {
+                canWhiteBigCastle = false;
+                canWhiteSmallCastle = false;
+            }
+            else if (m.From == WRookPosL)
+            {
+                canWhiteBigCastle = false;
+            }
+            else if (m.From == WRookPosR)
+            {
+                canWhiteSmallCastle = false;
+            }
+            else if (m.From == BKingPos)
+            {
+                canBlackBigCastle = false;
+                canBlackSmallCastle = false;
+            }
+            else if (m.From == BRookPosL)
+            {
+                canBlackBigCastle = false;
+            }
+            else if (m.From == BRookPosR)
+            {
+                canBlackSmallCastle = false;
+            }
 
             if (OnMove != null)
                 OnMove.Invoke(m);
@@ -142,28 +205,11 @@ namespace ChessEngine
 
         public bool IsCheck(CellContent playerColor, bool doNotCastle)
         {
-            //calculer toutes les cases atteintes par les pièces adverses
             Coordinates kingPos;
             if (!KingPosition(playerColor, out kingPos))
                 return false;
 
             return IsCheck(playerColor, kingPos, doNotCastle);
-            /*var opponentColor = playerColor.OpponentColor();
-
-            for (int l = 0; l < 8; l++)
-            {
-                for (int c = 0; c < 8; c++)
-                {
-                    if (_cellsContent[c, l].HasFlag(opponentColor))
-                    {
-                        var moves = PossibleMoves(new Coordinates(c, l));
-                        if (moves.Contains(kingPos))
-                            return true;
-                    }
-                }
-            }
-
-            return false;*/
         }
 
         private bool IsCheck(CellContent playerColor, Coordinates position, bool doNotCastle)
@@ -336,37 +382,41 @@ namespace ChessEngine
             if (doNotCastle)
                 return res;
 
-            //Can castle ?
-            if(opponentColor == CellContent.White && canBlackCastle ||
-                opponentColor == CellContent.Black && canWhiteCastle)
+            bool canBigCastle;
+            bool canSmallCastle;
+            Coordinates[] bigCastleCoords;
+            Coordinates[] smallCastleCoords;
+            if (playerColor == CellContent.White)
             {
-                if (IsCheck(playerColor, true))
-                    return res;
+                canBigCastle = canWhiteBigCastle;
+                canSmallCastle = canWhiteSmallCastle;
+                bigCastleCoords = whiteBigCastleCoords;
+                smallCastleCoords = whiteSmallCastleCoords;
+            }
+            else
+            {
+                canBigCastle = canBlackBigCastle;
+                canSmallCastle = canBlackSmallCastle;
+                bigCastleCoords = blackBigCastleCoords;
+                smallCastleCoords = blackSmallCastleCoords;
+            }
 
-                Coordinates kingPos;
-                if (!KingPosition(playerColor, out kingPos))
-                    return res;
-
-                //grand rock
-                var m1 = kingPos.Move(1, 0);
-                var m2 = kingPos.Move(2, 0);
-                if (!IsCheck(playerColor, m1, true) && GetCellContent(m1) == CellContent.Empty &&
-                    !IsCheck(playerColor, m2, true) && GetCellContent(m2) == CellContent.Empty)
+            if (canBigCastle)
+            {
+                if (bigCastleCoords.All(x => GetCellContent(x).HasFlag(CellContent.Empty)) &&
+                    bigCastleCoords.Take(2).All(x => !IsCheck(playerColor, x, true)))
                 {
-                    Debug.Log("Grand rock OK");
-                    res.Add(m2);
+                    res.Add(bigCastleCoords[1]);
                 }
+            }
 
-                //petit rock
-                m1 = kingPos.Move(-1, 0);
-                m2 = kingPos.Move(-2, 0);
-                if (!IsCheck(playerColor, m1, true) && GetCellContent(m1) == CellContent.Empty &&
-                    !IsCheck(playerColor, m2, true) && GetCellContent(m2) == CellContent.Empty)
+            if (canSmallCastle)
+            {
+                if (smallCastleCoords.All(x => GetCellContent(x).HasFlag(CellContent.Empty)) &&
+                    smallCastleCoords.Take(2).All(x => !IsCheck(playerColor, x, true)))
                 {
-                    res.Add(m2);
-                    Debug.Log("Petit rock OK");
+                    res.Add(smallCastleCoords[1]);
                 }
-
             }
 
             return res;
