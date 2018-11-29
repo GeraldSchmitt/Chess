@@ -44,5 +44,23 @@ namespace ChessEngine
         {
             return !c1.Equals(c2);
         }
+
+        public static readonly Coordinates WKing = new Coordinates("e1");
+        public static readonly Coordinates WKingBig = new Coordinates("c1");
+        public static readonly Coordinates WKingSmall = new Coordinates("g1");
+
+        public static readonly Coordinates BKing = new Coordinates("e8");
+        public static readonly Coordinates BKingBig = new Coordinates("c8");
+        public static readonly Coordinates BKingSmall = new Coordinates("g8");
+
+        public static readonly Coordinates d8 = new Coordinates("d8");
+        public static readonly Coordinates f8 = new Coordinates("f8");
+        public static readonly Coordinates d1 = new Coordinates("d1");
+        public static readonly Coordinates f1 = new Coordinates("f1");
+        
+        public static readonly Coordinates WRookL = new Coordinates("a1");
+        public static readonly Coordinates WRookR = new Coordinates("h1");
+        public static readonly Coordinates BRookL = new Coordinates("a8");
+        public static readonly Coordinates BRookR = new Coordinates("h8");
     }
 }

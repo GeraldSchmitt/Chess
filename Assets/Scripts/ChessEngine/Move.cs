@@ -6,14 +6,6 @@ namespace ChessEngine
 {
     public class Move
     {
-        private static readonly Coordinates WKingPos = new Coordinates("e1");
-        private static readonly Coordinates WKingPosBig = new Coordinates("c1");
-        private static readonly Coordinates WKingPosSmall = new Coordinates("g1");
-
-        private static readonly Coordinates BKingPos = new Coordinates("e8");
-        private static readonly Coordinates BKingPosBig = new Coordinates("c8");
-        private static readonly Coordinates BKingPosSmall = new Coordinates("g8");
-
         public Move()
         { }
 
@@ -28,22 +20,26 @@ namespace ChessEngine
 
         public bool IsWBigCastle()
         {
-            return From == WKingPos && To == WKingPosBig;
+            return From == Coordinates.WKing && 
+                To == Coordinates.WKingBig;
         }
 
         public bool IsWSmallCastle()
         {
-            return From == WKingPos && To == WKingPosSmall;
+            return From == Coordinates.WKing && 
+                To == Coordinates.WKingSmall;
         }
 
         public bool IsBBigCastle()
         {
-            return From == BKingPos && To == BKingPosBig;
+            return From == Coordinates.BKing && 
+                To == Coordinates.BKingBig;
         }
 
         public bool IsBSmallCastle()
         {
-            return From == BKingPos && To == BKingPosSmall;
+            return From == Coordinates.BKing && 
+                To == Coordinates.BKingSmall;
         }
     }
 }

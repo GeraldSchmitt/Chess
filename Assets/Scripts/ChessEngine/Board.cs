@@ -54,12 +54,7 @@ namespace ChessEngine
             new Coordinates("b1")
         };
 
-        private static readonly Coordinates WKingPos = new Coordinates("e1");
-        private static readonly Coordinates BKingPos = new Coordinates("e8");
-        private static readonly Coordinates WRookPosL = new Coordinates("a1");
-        private static readonly Coordinates WRookPosR = new Coordinates("h1");
-        private static readonly Coordinates BRookPosL = new Coordinates("a8");
-        private static readonly Coordinates BRookPosR = new Coordinates("h8");
+        
 
         public Board()
         {
@@ -89,19 +84,19 @@ namespace ChessEngine
             // Castling move
             if (m.IsBBigCastle())
             {
-                Move(BRookPosL, new Coordinates("d8"));
+                Move(Coordinates.BRookL, Coordinates.d8);
             }
             else if (m.IsBSmallCastle())
             {
-                Move(BRookPosR, new Coordinates("f8"));
+                Move(Coordinates.BRookR, Coordinates.f8);
             }
             else if (m.IsWBigCastle())
             {
-                Move(WRookPosL, new Coordinates("d1"));
+                Move(Coordinates.WRookL, Coordinates.d1);
             }
             else if (m.IsWSmallCastle())
             {
-                Move(WRookPosR, new Coordinates("f1"));
+                Move(Coordinates.WRookR, Coordinates.f1);
             }
 
             // Next player
@@ -112,29 +107,29 @@ namespace ChessEngine
             BlackCheck = IsCheck(CellContent.Black, true);
 
             // Remember if castling pieces moved
-            if (m.From == WKingPos)
+            if (m.From == Coordinates.WKing)
             {
                 canWhiteBigCastle = false;
                 canWhiteSmallCastle = false;
             }
-            else if (m.From == WRookPosL)
+            else if (m.From == Coordinates.WRookL)
             {
                 canWhiteBigCastle = false;
             }
-            else if (m.From == WRookPosR)
+            else if (m.From == Coordinates.WRookR)
             {
                 canWhiteSmallCastle = false;
             }
-            else if (m.From == BKingPos)
+            else if (m.From == Coordinates.BKing)
             {
                 canBlackBigCastle = false;
                 canBlackSmallCastle = false;
             }
-            else if (m.From == BRookPosL)
+            else if (m.From == Coordinates.BRookL)
             {
                 canBlackBigCastle = false;
             }
-            else if (m.From == BRookPosR)
+            else if (m.From == Coordinates.BRookR)
             {
                 canBlackSmallCastle = false;
             }
