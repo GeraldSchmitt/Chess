@@ -62,5 +62,7 @@ namespace ChessEngine
         public static readonly Coordinates WRookR = new Coordinates("h1");
         public static readonly Coordinates BRookL = new Coordinates("a8");
         public static readonly Coordinates BRookR = new Coordinates("h8");
+
+        public static readonly Coordinates None = new Coordinates(-1, -1);
     }
 }

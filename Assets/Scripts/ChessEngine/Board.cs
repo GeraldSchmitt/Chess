@@ -28,6 +28,8 @@ namespace ChessEngine
         private bool canBlackBigCastle = true;
         private bool canBlackSmallCastle = true;
 
+        private Coordinates enPassant = Coordinates.None;
+
         private static readonly Coordinates[] blackSmallCastleCoords =
         {
             new Coordinates("f8"),
@@ -54,8 +56,6 @@ namespace ChessEngine
             new Coordinates("b1")
         };
 
-        
-
         public Board()
         {
             InitPieces();
@@ -77,6 +77,8 @@ namespace ChessEngine
 
         public void Move(Move m)
         {
+            var movingPiece = GetCellContent(m.From);
+
             // Normal move
             CellsContent[m.To.c, m.To.l] = CellsContent[m.From.c, m.From.l];
             CellsContent[m.From.c, m.From.l] = CellContent.Empty;
@@ -97,6 +99,30 @@ namespace ChessEngine
             else if (m.IsWSmallCastle())
             {
                 Move(Coordinates.WRookR, Coordinates.f1);
+            }
+
+            // Is it prise en Passant ?
+            if (m.To == enPassant && movingPiece.HasFlag(CellContent.Pawn))
+            {
+                if(m.To.l == 2)
+                {
+                    CellsContent[m.To.c, 3] = CellContent.Empty;
+                }
+                else
+                {
+                    CellsContent[m.To.c, 5] = CellContent.Empty;
+                }
+            }
+
+            // Remember en passant
+            enPassant = Coordinates.None;
+            if (GetCellContent(m.To).HasFlag(CellContent.Pawn) &&
+                Math.Abs(m.To.l - m.From.l) == 2)
+            {
+                enPassant = new Coordinates(
+                    m.From.c,
+                    (m.From.l + m.To.l) / 2);
+                Debug.Log("Remember en passant " + enPassant.ToString());
             }
 
             // Next player
@@ -468,13 +494,15 @@ namespace ChessEngine
 
             // Can eat ?
             move = coord.Move(1, direction);
-            if (GetCellContent(move).HasFlag(opponentColor))
+            if (GetCellContent(move).HasFlag(opponentColor)
+                || move == enPassant)
             {
                 res.Add(move);
             }
 
             move = coord.Move(-1, direction);
-            if (GetCellContent(move).HasFlag(opponentColor))
+            if (GetCellContent(move).HasFlag(opponentColor)
+                || move == enPassant)
             {
                 res.Add(move);
             }
@@ -492,7 +520,7 @@ namespace ChessEngine
             return PawnRule(coord, CellContent.White);
         }
 
-        private CellContent GetCellContent(Coordinates c)
+        public CellContent GetCellContent(Coordinates c)
         {
             if (c.c < 0 || c.l < 0 || c.c > 7 || c.l > 7)
                 return CellContent.Outside;
