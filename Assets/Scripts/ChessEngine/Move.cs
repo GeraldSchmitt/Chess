@@ -6,17 +6,23 @@ namespace ChessEngine
 {
     public class Move
     {
+        public Coordinates From { get; set; }
+        public Coordinates To { get; set; }
+        public bool EnPassant { get; set; }
+
         public Move()
         { }
 
-        public Move(Coordinates from, Coordinates to)
+        public Move(Coordinates from, Coordinates to, bool enPassant = false)
         {
             From = from;
             To = to;
+            EnPassant = enPassant;
+            if (enPassant)
+            {
+                Debug.Log("Move en passant !");
+            }
         }
-
-        public Coordinates From { get; set; }
-        public Coordinates To { get; set; }
 
         public bool IsWBigCastle()
         {

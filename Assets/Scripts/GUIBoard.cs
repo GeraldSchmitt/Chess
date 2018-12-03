@@ -168,7 +168,7 @@ public class GUIBoard : MonoBehaviour {
             var newCoord = new Coordinates { c = c, l = l };
             if (_possibleMoves.Select(x => x.To).Contains(newCoord))
             {
-                Move m = new Move(_selectedCoordinates, newCoord);
+                Move m = _possibleMoves.First(x => x.To == newCoord);
                 _board.Move(m);
             }
 
@@ -177,7 +177,10 @@ public class GUIBoard : MonoBehaviour {
 
     private void OnMove(Move m)
     {
+        // Normal move
         Move(m.From, m.To);
+
+        // Castling
         if (m.IsBBigCastle())
         {
             Move(new Coordinates("a8"), new Coordinates("d8"));
@@ -193,6 +196,16 @@ public class GUIBoard : MonoBehaviour {
         else if (m.IsWSmallCastle())
         {
             Move(new Coordinates("h1"), new Coordinates("f1"));
+        }
+
+        // En passant
+        if(m.EnPassant)
+        {
+            Debug.Log("En passant !");
+            var dir = _board.ActivePlayer.HasFlag(CellContent.White) ?
+                1 : -1;
+            var toRemove = m.To.Move(0, dir);
+            Remove(toRemove);
         }
 
         whiteCheck = _board.IsCheck(CellContent.White, true);
@@ -219,6 +232,18 @@ public class GUIBoard : MonoBehaviour {
 
         // Because struct is passed by value
         BoardCells[from.c, from.l] = fromCell;
+        BoardCells[to.c, to.l] = toCell;
+    }
+
+    private void Remove(Coordinates to)
+    {
+        var toCell = BoardCells[to.c, to.l];
+
+        if (toCell.PieceSprite != null)
+        {
+            toCell.PieceSprite.SetActive(false);
+        }
+
         BoardCells[to.c, to.l] = toCell;
     }
 

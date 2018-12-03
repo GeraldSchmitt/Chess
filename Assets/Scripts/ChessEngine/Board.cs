@@ -110,7 +110,7 @@ namespace ChessEngine
                 }
                 else
                 {
-                    CellsContent[m.To.c, 5] = CellContent.Empty;
+                    CellsContent[m.To.c, 4] = CellContent.Empty;
                 }
             }
 
@@ -496,14 +496,14 @@ namespace ChessEngine
             if (GetCellContent(to).HasFlag(opponentColor)
                 || to == enPassant)
             {
-                res.Add(new Move(coord, to));
+                res.Add(new Move(coord, to, to == enPassant));
             }
 
             to = coord.Move(-1, direction);
             if (GetCellContent(to).HasFlag(opponentColor)
                 || to == enPassant)
             {
-                res.Add(new Move(coord, to));
+                res.Add(new Move(coord, to, to == enPassant));
             }
 
             return res;
