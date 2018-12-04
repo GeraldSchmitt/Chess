@@ -132,27 +132,7 @@ public class GUIBoard : MonoBehaviour {
     {
         if (!_isSelection)
         {
-            if (_selectedCell == null)
-            {
-                _selectedCell = Instantiate(SelectedCellPrefab);
-                _selectedCell.transform.parent = transform;
-            }
-
-            _selectedCell.SetActive(true);
-            _selectedCell.transform.position =
-                BoardCells[c, l].BoardCell.transform.position +
-                new Vector3(0, 0, SelectionZDepth);
-            _selectedCoordinates.l = l;
-            _selectedCoordinates.c = c;
-
-            if (_board.CellsContent[c,l] != CellContent.Empty)
-                _isSelection = true;
-
-            // Get possible moves
-            _possibleMoves = _board.LegalMoves(_selectedCoordinates).ToList();
-            ShowPossibleMoves(_possibleMoves);
-            Debug.Log(string.Format("{0} possible moves :", _possibleMoves.Count()));
-            Debug.Log(string.Join(", ", _possibleMoves.Select(x => x.ToString()).ToArray()));
+            SelectCell(c, l);
         }
         else
         {
@@ -171,31 +151,59 @@ public class GUIBoard : MonoBehaviour {
                 Move m = _possibleMoves.First(x => x.To == newCoord);
                 _board.Move(m);
             }
-
+            else
+            {
+                SelectCell(c, l);
+            }
         }
+    }
+
+    private void SelectCell(int c, int l)
+    {
+        if (_selectedCell == null)
+        {
+            _selectedCell = Instantiate(SelectedCellPrefab);
+            _selectedCell.transform.parent = transform;
+        }
+
+        _selectedCell.SetActive(true);
+        _selectedCell.transform.position =
+            BoardCells[c, l].BoardCell.transform.position +
+            new Vector3(0, 0, SelectionZDepth);
+        _selectedCoordinates.l = l;
+        _selectedCoordinates.c = c;
+
+        if (_board.CellsContent[c, l] != CellContent.Empty)
+            _isSelection = true;
+
+        // Get possible moves
+        _possibleMoves = _board.LegalMoves(_selectedCoordinates).ToList();
+        ShowPossibleMoves(_possibleMoves);
+        Debug.Log(string.Format("{0} possible moves :", _possibleMoves.Count()));
+        Debug.Log(string.Join(", ", _possibleMoves.Select(x => x.ToString()).ToArray()));
     }
 
     private void OnMove(Move m)
     {
         // Normal move
-        Move(m.From, m.To);
+        MovePiece(m.From, m.To);
 
         // Castling
         if (m.IsBBigCastle())
         {
-            Move(new Coordinates("a8"), new Coordinates("d8"));
+            MovePiece(new Coordinates("a8"), new Coordinates("d8"));
         }
         else if (m.IsBSmallCastle())
         {
-            Move(new Coordinates("h8"), new Coordinates("f8"));
+            MovePiece(new Coordinates("h8"), new Coordinates("f8"));
         }
         else if (m.IsWBigCastle())
         {
-            Move(new Coordinates("a1"), new Coordinates("d1"));
+            MovePiece(new Coordinates("a1"), new Coordinates("d1"));
         }
         else if (m.IsWSmallCastle())
         {
-            Move(new Coordinates("h1"), new Coordinates("f1"));
+            MovePiece(new Coordinates("h1"), new Coordinates("f1"));
         }
 
         // En passant
@@ -205,14 +213,14 @@ public class GUIBoard : MonoBehaviour {
             var dir = _board.ActivePlayer.HasFlag(CellContent.White) ?
                 1 : -1;
             var toRemove = m.To.Move(0, dir);
-            Remove(toRemove);
+            RemovePiece(toRemove);
         }
 
         whiteCheck = _board.IsCheck(CellContent.White, true);
         blackCheck = _board.IsCheck(CellContent.Black, true);
     }
 
-    private void Move(Coordinates from, Coordinates to)
+    private void MovePiece(Coordinates from, Coordinates to)
     {
         if (from.c == to.c && from.l == to.l) return;
 
@@ -235,7 +243,7 @@ public class GUIBoard : MonoBehaviour {
         BoardCells[to.c, to.l] = toCell;
     }
 
-    private void Remove(Coordinates to)
+    private void RemovePiece(Coordinates to)
     {
         var toCell = BoardCells[to.c, to.l];
 
