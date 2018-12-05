@@ -114,6 +114,12 @@ namespace ChessEngine
                 }
             }
 
+            // Is it promotion ?
+            if (m.Promotion != CellContent.Empty)
+            {
+                CellsContent[m.To.c, m.To.l] = m.Promotion;
+            }
+
             // Remember en passant
             enPassant = Coordinates.None;
             if (GetCellContent(m.To).HasFlag(CellContent.Pawn) &&
@@ -474,13 +480,14 @@ namespace ChessEngine
             var res = new List<Move>();
             var firstLine = color == CellContent.White ? 1 : 6;
             var direction = color == CellContent.White ? 1 : -1;
+            var promotionLine = color == CellContent.White ? 7: 0;
             var opponentColor = color.OpponentColor();
 
             // Can move ?
             Coordinates to = coord.Move(0, direction);
             if (GetCellContent(to) == CellContent.Empty)
             {
-                res.Add(new Move(coord,to));
+                AddPawnMove(ref res, new Move(coord, to), false, promotionLine, color);
 
                 // Can double move ?
                 to = coord.Move(0, direction * 2);
@@ -488,35 +495,43 @@ namespace ChessEngine
                     res.Add(new Move(coord, to));
             }
 
-            // Can promote ?
-            // TODO promote the pawn !
-
             // Can eat ?
             to = coord.Move(1, direction);
             if (GetCellContent(to).HasFlag(opponentColor)
                 || to == enPassant)
             {
-                res.Add(new Move(coord, to, to == enPassant));
+                AddPawnMove(ref res, new Move(coord, to), to == enPassant, promotionLine, color);
             }
 
             to = coord.Move(-1, direction);
             if (GetCellContent(to).HasFlag(opponentColor)
                 || to == enPassant)
             {
-                res.Add(new Move(coord, to, to == enPassant));
+                AddPawnMove(ref res, new Move(coord, to), to == enPassant, promotionLine, color);
             }
 
             return res;
         }
 
-        private IEnumerable<Move> BPawnRule(Coordinates coord)
+        private void AddPawnMove(
+            ref List<Move> moves, Move m, 
+            bool enPassant, int promotionLine, CellContent color)
         {
-            return PawnRule(coord, CellContent.Black);
-        }
-
-        private IEnumerable<Move> WPawnRule(Coordinates coord)
-        {
-            return PawnRule(coord, CellContent.White);
+            if (enPassant)
+            {
+                moves.Add(new Move(m.From, m.To, enPassant));
+            }
+            else if (m.To.l == promotionLine)
+            {
+                moves.Add(new Move(m.From, m.To, CellContent.Queen | color));
+                moves.Add(new Move(m.From, m.To, CellContent.Rook | color));
+                moves.Add(new Move(m.From, m.To, CellContent.Knight | color));
+                moves.Add(new Move(m.From, m.To, CellContent.Bishop | color));
+            }
+            else
+            {
+                moves.Add(m);
+            }
         }
 
         public CellContent GetCellContent(Coordinates c)

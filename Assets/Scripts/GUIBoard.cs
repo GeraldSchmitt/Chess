@@ -27,6 +27,7 @@ public class GUIBoard : MonoBehaviour {
     }
 
     private CellStruct[,] BoardCells = new CellStruct[8, 8];
+    private Dictionary<CellContent, Sprite> Pieces;
 
     private List<GameObject> OkMoves = new List<GameObject>();
 
@@ -61,7 +62,7 @@ public class GUIBoard : MonoBehaviour {
         }
 
         // Load the sprites pieces
-        Dictionary<CellContent, Sprite> Pieces = new Dictionary<CellContent, Sprite>();
+        Pieces = new Dictionary<CellContent, Sprite>();
         int spriteWidth = Sprites.width / 6;
         int spriteHeight = Sprites.height / 2;
         List<CellContent> spriteOrder = new List<CellContent> {
@@ -136,18 +137,13 @@ public class GUIBoard : MonoBehaviour {
         }
         else
         {
-            ShowPossibleMoves(null);
-            Debug.Log(string.Format(
-                "{0}-{1} to {2}-{3}", 
-                _selectedCoordinates.c,
-                _selectedCoordinates.l,
-                c,
-                l));
-            _selectedCell.SetActive(false);
-            _isSelection = false;
+            DeselectCell();
+
+            // play move if possible
             var newCoord = new Coordinates { c = c, l = l };
             if (_possibleMoves.Select(x => x.To).Contains(newCoord))
             {
+                // TODO pawn promotion when needed
                 Move m = _possibleMoves.First(x => x.To == newCoord);
                 _board.Move(m);
             }
@@ -156,6 +152,13 @@ public class GUIBoard : MonoBehaviour {
                 SelectCell(c, l);
             }
         }
+    }
+
+    private void DeselectCell()
+    {
+        ShowPossibleMoves(null);
+        _selectedCell.SetActive(false);
+        _isSelection = false;
     }
 
     private void SelectCell(int c, int l)
@@ -214,6 +217,18 @@ public class GUIBoard : MonoBehaviour {
                 1 : -1;
             var toRemove = m.To.Move(0, dir);
             RemovePiece(toRemove);
+        }
+
+        // Promotion
+        if (m.Promotion != CellContent.Empty)
+        {
+            var sprite = Instantiate(
+                    Pieces[m.Promotion],
+                    new Vector3(0, 0, 0),
+                    Quaternion.identity);
+
+            var sr = BoardCells[m.To.c, m.To.l].PieceSprite.GetComponent<SpriteRenderer>();
+            sr.sprite = sprite;
         }
 
         whiteCheck = _board.IsCheck(CellContent.White, true);
