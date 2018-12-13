@@ -35,9 +35,6 @@ public class GUIBoard : MonoBehaviour {
     private const float SelectionZDepth = -0.001f;
     private const float TopZDepth = -0.02f;
 
-    private bool whiteCheck = false;
-    private bool blackCheck = false;
-
 	// Use this for initialization
 	void Start () {
         _board = new Board();
@@ -122,6 +119,16 @@ public class GUIBoard : MonoBehaviour {
         if (_board.BlackCheck)
         {
             PlayersTurn.text += "\nNoir en échec.";
+        }
+
+        if (_board.WhiteCheckMate)
+        {
+            PlayersTurn.text += "\nVictoire de noir.";
+        }
+
+        if (_board.BlackCheckMate)
+        {
+            PlayersTurn.text += "\nVictoire de blanc";
         }
     }
 
@@ -230,9 +237,6 @@ public class GUIBoard : MonoBehaviour {
             var sr = BoardCells[m.To.c, m.To.l].PieceSprite.GetComponent<SpriteRenderer>();
             sr.sprite = sprite;
         }
-
-        whiteCheck = _board.IsCheck(CellContent.White, true);
-        blackCheck = _board.IsCheck(CellContent.Black, true);
     }
 
     private void MovePiece(Coordinates from, Coordinates to)

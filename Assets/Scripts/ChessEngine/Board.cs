@@ -22,6 +22,8 @@ namespace ChessEngine
 
         public bool WhiteCheck { get; private set; }
         public bool BlackCheck { get; private set; }
+        public bool WhiteCheckMate { get; private set; }
+        public bool BlackCheckMate { get; private set; }
 
         private bool canWhiteBigCastle = true;
         private bool canWhiteSmallCastle = true;
@@ -75,7 +77,7 @@ namespace ChessEngine
             CellsContent[from.c, from.l] = CellContent.Empty;
         }
 
-        public void Move(Move m)
+        public void Move(Move m, bool allowRecursiveCalls = true)
         {
             var movingPiece = GetCellContent(m.From);
 
@@ -135,8 +137,18 @@ namespace ChessEngine
             activePlayer = activePlayer.OpponentColor();
 
             // Update board state
-            WhiteCheck = IsCheck(CellContent.White, true);
-            BlackCheck = IsCheck(CellContent.Black, true);
+            WhiteCheck = IsPlayerCheck(CellContent.White, true);
+            BlackCheck = IsPlayerCheck(CellContent.Black, true);
+            if (allowRecursiveCalls)
+            {
+                WhiteCheckMate = false;
+                BlackCheckMate = false;
+                if (activePlayer == CellContent.White)
+                    WhiteCheckMate = IsPlayerCheckMate(CellContent.White);
+
+                if (activePlayer == CellContent.Black)
+                    BlackCheckMate = IsPlayerCheckMate(CellContent.Black);
+            }
 
             // Remember if castling pieces moved
             if (m.From == Coordinates.WKing)
@@ -230,6 +242,21 @@ namespace ChessEngine
             return res;
         }
 
+        public IEnumerable<Move> AllPossibleMoves(CellContent playerColor)
+        {
+            for (int l = 0; l < 8; l++)
+            {
+                for (int c = 0; c < 8; c++)
+                {
+                    if (_cellsContent[c, l].HasFlag(playerColor))
+                    {
+                        foreach (var m in LegalMoves(new Coordinates(c, l)))
+                            yield return m;
+                    }
+                }
+            }
+        }
+
         public IEnumerable<Move> LegalMoves(Coordinates from)
         {
             if (!GetCellContent(from).HasFlag(activePlayer))
@@ -241,31 +268,45 @@ namespace ChessEngine
             var possiblesMoves = PossibleMoves(from, false);
             foreach(var move in possiblesMoves)
             {
-                var newBoard = PlayMove(move);
-                if (!newBoard.IsCheck(activePlayer, true))
+                var newBoard = PlayMove(move, false);
+                if (!newBoard.IsPlayerCheck(activePlayer, true))
                 {
                     yield return move;
                 }
             }
         }
 
-        public Board PlayMove(Move m)
+        public Board PlayMove(Move m, bool allowRecursiveCalls)
         {
             var newBoard = new Board(this);
-            newBoard.Move(m);
+            newBoard.Move(m, allowRecursiveCalls);
             return newBoard;
         }
 
-        public bool IsCheck(CellContent playerColor, bool doNotCastle)
+        public bool IsPlayerCheckMate(CellContent playerColor)
+        {
+            var moveCount = AllPossibleMoves(activePlayer).Count();
+            if (moveCount == 0 &&
+                ((activePlayer == CellContent.White && WhiteCheck) ||
+                (activePlayer == CellContent.Black && BlackCheck)))
+            {
+                Debug.Log("CHECK MATE !!!");
+                return true;
+            }
+
+            return false;
+        }
+
+        public bool IsPlayerCheck(CellContent playerColor, bool doNotCastle)
         {
             Coordinates kingPos;
             if (!KingPosition(playerColor, out kingPos))
                 return false;
 
-            return IsCheck(playerColor, kingPos, doNotCastle);
+            return IsPositionCheck(playerColor, kingPos, doNotCastle);
         }
 
-        private bool IsCheck(CellContent playerColor, Coordinates position, bool doNotCastle)
+        private bool IsPositionCheck(CellContent playerColor, Coordinates position, bool doNotCastle)
         {
             var opponentColor = playerColor.OpponentColor();
 
@@ -457,7 +498,7 @@ namespace ChessEngine
             if (canBigCastle)
             {
                 if (bigCastleCoords.All(x => GetCellContent(x).HasFlag(CellContent.Empty)) &&
-                    bigCastleCoords.Take(2).All(x => !IsCheck(playerColor, x, true)))
+                    bigCastleCoords.Take(2).All(x => !IsPositionCheck(playerColor, x, true)))
                 {
                     res.Add(new Move(coord, bigCastleCoords[1]));
                 }
@@ -466,7 +507,7 @@ namespace ChessEngine
             if (canSmallCastle)
             {
                 if (smallCastleCoords.All(x => GetCellContent(x).HasFlag(CellContent.Empty)) &&
-                    smallCastleCoords.Take(2).All(x => !IsCheck(playerColor, x, true)))
+                    smallCastleCoords.Take(2).All(x => !IsPositionCheck(playerColor, x, true)))
                 {
                     res.Add(new Move(coord, smallCastleCoords[1]));
                 }
