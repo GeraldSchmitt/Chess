@@ -130,6 +130,11 @@ public class GUIBoard : MonoBehaviour {
         {
             PlayersTurn.text += "\nVictoire de blanc";
         }
+
+        if (_board.StaleMate)
+        {
+            PlayersTurn.text += "\nPat - Egalité";
+        }
     }
 
     private GameObject _selectedCell;

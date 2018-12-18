@@ -24,6 +24,7 @@ namespace ChessEngine
         public bool BlackCheck { get; private set; }
         public bool WhiteCheckMate { get; private set; }
         public bool BlackCheckMate { get; private set; }
+        public bool StaleMate { get; private set; }
 
         private bool canWhiteBigCastle = true;
         private bool canWhiteSmallCastle = true;
@@ -148,6 +149,8 @@ namespace ChessEngine
 
                 if (activePlayer == CellContent.Black)
                     BlackCheckMate = IsPlayerCheckMate(CellContent.Black);
+
+                StaleMate = IsStaleMate();
             }
 
             // Remember if castling pieces moved
@@ -291,6 +294,25 @@ namespace ChessEngine
                 (activePlayer == CellContent.Black && BlackCheck)))
             {
                 Debug.Log("CHECK MATE !!!");
+                return true;
+            }
+
+            return false;
+        }
+
+        public bool IsStaleMate()
+        {
+            return IsStaleMate(activePlayer);
+        }
+
+        private bool IsStaleMate(CellContent playerColor)
+        {
+            var moveCount = AllPossibleMoves(activePlayer).Count();
+            if (moveCount == 0 &&
+                ((activePlayer == CellContent.White && !WhiteCheck) ||
+                (activePlayer == CellContent.Black && !BlackCheck)))
+            {
+                Debug.Log("STALE MATE !!!");
                 return true;
             }
 
